@@ -210,3 +210,7 @@ data/
 outputs/
 *.pt
 processed_data/
+
+frames/
+
+src/configs/data/default.yaml
