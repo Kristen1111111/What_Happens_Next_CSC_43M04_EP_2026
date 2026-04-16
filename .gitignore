@@ -211,7 +211,6 @@ outputs/
 *.pt
 processed_data/
 
-<<<<<<< HEAD
 #frames
 frames/
 
