@@ -213,3 +213,5 @@ processed_data/
 
 #frames
 frames/
+
+src/configs/data/default.yaml

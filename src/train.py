@@ -14,10 +14,8 @@ split; the dedicated ``dataset.val_dir`` is for ``evaluate.py`` only.
 """
 
 from __future__ import annotations
-
 from pathlib import Path
 from typing import Any, Dict, Tuple
-
 import hydra
 import torch
 import torch.nn as nn
