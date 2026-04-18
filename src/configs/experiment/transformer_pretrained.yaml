@@ -1,0 +1,14 @@
+defaults:
+  - /model: cnn_transformer
+
+model:
+  pretrained: true
+  hidden_dim: 512
+  num_layers: 2
+  num_heads: 8
+  dropout: 0.2
+
+training:
+  batch_size: 4
+  lr: 0.0001
+  epochs: 12
