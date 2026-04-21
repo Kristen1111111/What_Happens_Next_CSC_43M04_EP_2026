@@ -1,0 +1,18 @@
+defaults:
+  - /model: cnn_transformer
+
+model:
+  pretrained: true
+  hidden_dim: 256
+  num_layers: 2
+  num_heads: 4
+  dropout: 0.35
+  freeze_backbone: true
+  unfreeze_layer4: true
+
+training:
+  batch_size: 16
+  lr: 0.0003
+  epochs: 30
+  weight_decay: 0.0005
+  label_smoothing: 0.1

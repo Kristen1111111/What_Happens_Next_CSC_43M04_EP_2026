@@ -28,6 +28,8 @@ from models.cnn_baseline import CNNBaseline
 from models.cnn_lstm import CNNLSTM
 from utils import build_transforms, set_seed, split_train_val
 from models.cnn_transformer import CNNTransformer 
+from models.video_transformer import VideoTransformer
+from models.video_transformer import build_video_transformer
 
 def build_model(cfg: DictConfig) -> nn.Module:
     """Create the model described by cfg.model.name."""
@@ -53,7 +55,18 @@ def build_model(cfg: DictConfig) -> nn.Module:
             num_heads=int(cfg.model.get("num_heads", 8)),
             dropout=float(cfg.model.get("dropout", 0.2)),
         ) 
+    if name == "video_transformer":
 
+        return build_video_transformer(
+            num_classes=num_classes,
+            num_frames=int(cfg.dataset.num_frames),
+            pretrained=pretrained,
+            depth=int(cfg.model.get("depth", 12)),
+            embed_dim=int(cfg.model.get("embed_dim", 768)),
+            num_heads=int(cfg.model.get("num_heads", 12)),
+            dropout=float(cfg.model.get("dropout", 0.1)),
+            head_hidden=int(cfg.model.get("head_hidden", 512)),
+        )
     raise ValueError(f"Unknown model.name: {name}")
 
 
