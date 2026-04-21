@@ -1,29 +1,9 @@
-# @package _global_
-# VideoTransformer: divided space-time attention (TimeSformer-style) + ViT-B/16 pretrained
-#
-# Usage (from src/):
-#   python train.py experiment=video_transformer
-#
-# Requires timm:  pip install timm
-#
-model:
-  name: video_transformer
-  pretrained: true          # load ViT-B/16 ImageNet-21k weights via timm
-  num_classes: ${num_classes}
-  num_frames: ${dataset.num_frames}
-
-  # ViT-Base architecture (matches the pretrained checkpoint)
-  embed_dim: 768
-  depth: 12
-  num_heads: 12
-  dropout: 0.1
-  head_hidden: 512
-
-# Override training hypers optimised for a transformer
-training:
-  batch_size: 8             # keep small — ViT-B is memory hungry
-  lr: 0.00005               # lower LR for fine-tuning pretrained weights
-  epochs: 20
-  num_workers: 4
-  checkpoint_path: ${hydra:runtime.cwd}/best_model_transformer.pt
-  device: cuda
+name: video_transformer
+pretrained: true
+num_classes: ${num_classes}
+num_frames: ${dataset.num_frames}
+embed_dim: 256
+depth: 4
+num_heads: 4
+dropout: 0.2
+head_hidden: 256
