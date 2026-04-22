@@ -30,6 +30,13 @@ from utils import build_transforms, set_seed, split_train_val
 from models.cnn_transformer import CNNTransformer 
 from models.video_transformer import VideoTransformer
 from models.video_transformer import build_video_transformer
+from dataset.video_augmentation import (
+    VideoAugmentation,
+    VideoAugmentationTransform,
+    LabelSmoothingCrossEntropy,
+    mixup_criterion,
+)
+
 
 def build_model(cfg: DictConfig) -> nn.Module:
     """Create the model described by cfg.model.name."""
@@ -56,7 +63,6 @@ def build_model(cfg: DictConfig) -> nn.Module:
             dropout=float(cfg.model.get("dropout", 0.2)),
         ) 
     if name == "video_transformer":
-
         return build_video_transformer(
             num_classes=num_classes,
             num_frames=int(cfg.dataset.num_frames),
@@ -78,6 +84,7 @@ def train_one_epoch(
     device: torch.device,
     epoch: int,
     total_epochs: int,
+    augmenter: VideoAugmentation | None = None,
 ) -> Tuple[float, float]:
     """Returns (average loss, top-1 accuracy) on the training set for one epoch."""
     model.train()
@@ -92,19 +99,37 @@ def train_one_epoch(
     )
 
     for video_batch, labels in progress_bar:
-        # video_batch: (B, T, C, H, W), labels: (B,)
         video_batch = video_batch.to(device)
         labels = labels.to(device)
 
         optimizer.zero_grad()
-        logits = model(video_batch)  # (B, num_classes)
-        loss = loss_fn(logits, labels)
+
+        # Augmentations sur tensor (GPU) si activées
+        if augmenter is not None:
+            result = augmenter(video_batch, labels)
+            if isinstance(result, tuple):
+                # MixUp activé
+                video_batch, labels_a, labels_b, lam = result
+                logits = model(video_batch)
+                loss = mixup_criterion(loss_fn, logits, labels_a, labels_b, lam)
+                predictions = logits.argmax(dim=1)
+                correct += int((predictions == labels_a).sum().item())
+            else:
+                video_batch = result
+                logits = model(video_batch)
+                loss = loss_fn(logits, labels)
+                predictions = logits.argmax(dim=1)
+                correct += int((predictions == labels).sum().item())
+        else:
+            logits = model(video_batch)
+            loss = loss_fn(logits, labels)
+            predictions = logits.argmax(dim=1)
+            correct += int((predictions == labels).sum().item())
+
         loss.backward()
         optimizer.step()
 
         running_loss += float(loss.item()) * labels.size(0)
-        predictions = logits.argmax(dim=1)
-        correct += int((predictions == labels).sum().item())
         total += labels.size(0)
 
         average_loss = running_loss / max(total, 1)
@@ -221,19 +246,50 @@ def main(cfg: DictConfig) -> None:
     )
 
     model = build_model(cfg).to(device)
-    loss_fn = nn.CrossEntropyLoss()
+
+    # Loss : label smoothing si cfg.training.label_smoothing > 0, sinon CrossEntropy standard
+    smoothing = float(cfg.training.get("label_smoothing", 0.0))
+    if smoothing > 0.0:
+        loss_fn = LabelSmoothingCrossEntropy(smoothing=smoothing)
+    else:
+        loss_fn = nn.CrossEntropyLoss()
+
     optimizer = torch.optim.Adam(model.parameters(), lr=float(cfg.training.lr))
+
+    # Scheduler cosine optionnel (activé si cfg.training.use_scheduler: true)
+    scheduler = None
+    if cfg.training.get("use_scheduler", False):
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=int(cfg.training.epochs),
+            eta_min=1e-6,
+        )
+
+    # Augmentations sur tensor GPU (activées si cfg.training.use_augmentation: true)
+    augmenter = None
+    if cfg.training.get("use_augmentation", False):
+        augmenter = VideoAugmentation(
+            p_temporal_jitter=float(cfg.training.get("aug_temporal_jitter", 0.3)),
+            p_frame_drop=float(cfg.training.get("aug_frame_drop", 0.2)),
+            p_erasing=float(cfg.training.get("aug_erasing", 0.5)),
+            p_mixup=float(cfg.training.get("aug_mixup", 0.3)),
+            mixup_alpha=float(cfg.training.get("aug_mixup_alpha", 0.2)),
+        )
 
     best_val_accuracy = 0.0
     checkpoint_path = Path(cfg.training.checkpoint_path).resolve()
 
     for epoch in range(int(cfg.training.epochs)):
         train_loss, train_acc = train_one_epoch(
-            model, train_loader, loss_fn, optimizer, device, epoch, int(cfg.training.epochs)
+            model, train_loader, loss_fn, optimizer, device,
+            epoch, int(cfg.training.epochs), augmenter,
         )
         val_loss, val_acc = evaluate_epoch(
             model, val_loader, loss_fn, device, epoch, int(cfg.training.epochs)
         )
+
+        if scheduler is not None:
+            scheduler.step()
 
         print(
             f"Epoch {epoch + 1}/{cfg.training.epochs} | "

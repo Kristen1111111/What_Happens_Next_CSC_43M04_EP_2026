@@ -1,9 +1,36 @@
-name: video_transformer
-pretrained: true
-num_classes: ${num_classes}
-num_frames: ${dataset.num_frames}
-embed_dim: 256
-depth: 4
-num_heads: 4
-dropout: 0.2
-head_hidden: 256
+# @package _global_
+# VideoTransformer — config adaptée GPU 11GB
+# ViT-Small (embed_dim=384, depth=8, num_heads=6) : ~22M params vs 86M pour ViT-Base
+# Chargement des poids pretrained vit_small_patch16_224 depuis timm
+
+model:
+  name: video_transformer
+  pretrained: true
+  num_classes: ${num_classes}
+  num_frames: ${dataset.num_frames}
+  embed_dim: 384        # ViT-Small (768 → OOM, 384 → ~3GB)
+  depth: 8              # compromis perf/mémoire
+  num_heads: 6          # 384 / 6 = 64 head_dim
+  dropout: 0.3
+  head_hidden: 256
+
+training:
+  batch_size: 8         # réduit pour tenir en mémoire
+  lr: 3.0e-05
+  epochs: 40
+  num_workers: 4
+  checkpoint_path: ${hydra:runtime.cwd}/best_model_transformer.pt
+  device: cuda
+  label_smoothing: 0.1
+  use_scheduler: true
+  use_augmentation: true
+  aug_temporal_jitter: 0.3
+  aug_frame_drop: 0.2
+  aug_erasing: 0.5
+  aug_mixup: 0.3
+  aug_mixup_alpha: 0.2
+
+dataset:
+  num_frames: 4
+  val_ratio: 0.2
+  seed: 42

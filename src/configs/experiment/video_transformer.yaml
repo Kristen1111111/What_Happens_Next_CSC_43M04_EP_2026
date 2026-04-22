@@ -1,16 +1,46 @@
-defaults:
-  - /model: video_transformer
+# @package _global_
+# VideoTransformer — config anti-overfitting
+# Tous les knobs d'augmentation sont ici, train.py lit tout depuis cfg.training
+#
+# Usage : python train.py experiment=video_transformer
 
 model:
+  name: video_transformer
   pretrained: true
-  depth: 4
-  embed_dim: 256
-  num_heads: 4
-  dropout: 0.2
-  head_hidden: 256
+  num_classes: ${num_classes}
+  num_frames: ${dataset.num_frames}
+  embed_dim: 768
+  depth: 12
+  num_heads: 12
+  dropout: 0.3
+  head_hidden: 512
+  
 
 training:
-  batch_size: 2
-  lr: 0.0001
-  epochs: 20
-  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/video_transformer_best.pt
+  batch_size: 16
+  lr: 0.00003
+  epochs: 40
+  num_workers: 4
+  checkpoint_path: ${hydra:runtime.cwd}/best_model_transformer.pt
+  device: cuda
+
+  # --- Anti-overfitting : tout se contrôle ici ---
+
+  # Label smoothing (0.0 = CrossEntropy standard, 0.1 = recommandé)
+  label_smoothing: 0.1
+
+  # Scheduler cosine (réduit le LR progressivement jusqu'à eta_min=1e-6)
+  use_scheduler: true
+
+  # Augmentations sur tensor GPU (RandomErasing, TemporalJitter, FrameDrop, MixUp)
+  use_augmentation: true
+  aug_temporal_jitter: 0.3   # prob. d'échanger 2 frames adjacentes
+  aug_frame_drop: 0.2        # prob. de supprimer/dupliquer une frame
+  aug_erasing: 0.5           # prob. d'effacer un patch rectangulaire
+  aug_mixup: 0.3             # prob. de mixer deux clips
+  aug_mixup_alpha: 0.2       # intensité du mixup (Beta distribution)
+
+dataset:
+  num_frames: 4
+  val_ratio: 0.2
+  seed: 42

@@ -306,10 +306,11 @@ class VideoTransformer(nn.Module):
 
     def _load_pretrained_vit(self):
         """
-        Transfer spatial weights from timm's vit_base_patch16_224 (ImageNet-21k).
-        Only patch embedding, spatial positional embedding, and transformer MLP/attn
-        weights are copied. Temporal attention is initialised from spatial attention
-        weights for a warm start (following TimeSformer paper recommendation).
+        Transfer spatial weights from a pretrained ViT (timm).
+        Le modèle est choisi automatiquement selon embed_dim :
+            384 → vit_small_patch16_224  (~22M params, tient sur 11GB)
+            768 → vit_base_patch16_224   (~86M params, nécessite >16GB)
+        Temporal attention est initialisée depuis spatial attention (TimeSformer).
         """
         if not _TIMM_AVAILABLE:
             print(
@@ -318,15 +319,30 @@ class VideoTransformer(nn.Module):
             )
             return
 
+        # Sélection automatique selon embed_dim
+        timm_model_name = {
+            384: "vit_small_patch16_224",
+            768: "vit_base_patch16_224",
+        }.get(self.embed_dim)
+
+        if timm_model_name is None:
+            print(
+                f"[VideoTransformer] Pas de modèle pretrained pour embed_dim={self.embed_dim} "
+                f"(supportés: 384=ViT-Small, 768=ViT-Base). Training from scratch."
+            )
+            return
+
         try:
             vit = timm.create_model(
-                "vit_base_patch16_224",
+                timm_model_name,
                 pretrained=True,
                 num_classes=0,   # remove head
             )
         except Exception as exc:
             print(f"[VideoTransformer] Could not load pretrained ViT: {exc}. Skipping.")
             return
+
+        print(f"[VideoTransformer] Chargement de {timm_model_name} (embed_dim={self.embed_dim})")
 
         # Patch embedding
         self.patch_embed.proj.weight.data.copy_(vit.patch_embed.proj.weight.data)
