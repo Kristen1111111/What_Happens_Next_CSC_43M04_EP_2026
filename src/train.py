@@ -30,6 +30,7 @@ from utils import build_transforms, set_seed, split_train_val
 from models.cnn_transformer import CNNTransformer 
 from models.video_transformer import VideoTransformer
 from models.video_transformer import build_video_transformer
+from models.vl_jepa_video import build_vl_jepa_video_classifier
 from dataset.video_augmentation import (
     VideoAugmentation,
     VideoAugmentationTransform,
@@ -72,6 +73,21 @@ def build_model(cfg: DictConfig) -> nn.Module:
             num_heads=int(cfg.model.get("num_heads", 12)),
             dropout=float(cfg.model.get("dropout", 0.1)),
             head_hidden=int(cfg.model.get("head_hidden", 512)),
+        )
+    if name == "vl_jepa_video":
+        return build_vl_jepa_video_classifier(
+            num_classes=num_classes,
+            num_frames=int(cfg.dataset.num_frames),
+            pretrained=pretrained,
+            x_encoder_name=str(cfg.model.get("x_encoder_name", "vit_small_patch16_224")),
+            freeze_x_encoder=bool(cfg.model.get("freeze_x_encoder", False)),
+            predictor_dim=int(cfg.model.get("predictor_dim", 512)),
+            target_dim=int(cfg.model.get("target_dim", 512)),
+            predictor_depth=int(cfg.model.get("predictor_depth", 4)),
+            num_heads=int(cfg.model.get("num_heads", 8)),
+            num_query_tokens=int(cfg.model.get("num_query_tokens", 4)),
+            dropout=float(cfg.model.get("dropout", 0.2)),
+            logit_scale_init=float(cfg.model.get("logit_scale_init", 10.0)),
         )
     raise ValueError(f"Unknown model.name: {name}")
 

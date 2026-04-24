@@ -1,0 +1,35 @@
+defaults:
+  - /model: vl_jepa_video
+
+model:
+  pretrained: true
+  x_encoder_name: vit_small_patch16_224
+  freeze_x_encoder: false
+  predictor_dim: 512
+  target_dim: 512
+  predictor_depth: 4
+  num_heads: 8
+  num_query_tokens: 4
+  dropout: 0.20
+  logit_scale_init: 10.0
+
+training:
+  batch_size: 8
+  lr: 3.0e-05
+  epochs: 50
+  num_workers: 4
+  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/vl_jepa_video_best.pt
+  device: cuda
+  label_smoothing: 0.1
+  use_scheduler: true
+  use_augmentation: true
+  aug_temporal_jitter: 0.3
+  aug_frame_drop: 0.15
+  aug_erasing: 0.4
+  aug_mixup: 0.2
+  aug_mixup_alpha: 0.2
+
+dataset:
+  num_frames: 8
+  val_ratio: 0.2
+  seed: 42
