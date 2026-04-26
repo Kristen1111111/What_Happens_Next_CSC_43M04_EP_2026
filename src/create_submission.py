@@ -18,8 +18,9 @@ from __future__ import annotations
 
 import csv
 import os
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import hydra
 import torch
@@ -84,6 +85,23 @@ def resolve_video_dirs(test_root: Path, video_names: List[str]) -> List[Path]:
             f"{len(missing)} manifest video(s) not found under {test_root}: {sample}{extra}"
         )
     return out
+
+
+def make_submission_path(base_output_path: Path, val_accuracy: Optional[float]) -> Path:
+    """Build a new submission file path including accuracy and timestamp."""
+    if base_output_path.is_dir():
+        base_output_path = base_output_path / "submission.csv"
+
+    directory = base_output_path.parent
+    stem = base_output_path.stem or "submission"
+    suffix = base_output_path.suffix or ".csv"
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    acc_suffix = (
+        f"acc{val_accuracy:.4f}" if val_accuracy is not None else "accNA"
+    )
+    filename = f"{stem}_{acc_suffix}_{timestamp}{suffix}"
+    return directory / filename
 
 
 def discover_all_test_videos(test_root: Path) -> Tuple[List[str], List[Path]]:
@@ -160,12 +178,21 @@ def main(cfg: DictConfig) -> None:
         device_str = "cpu"
     device = torch.device(device_str)
 
-    checkpoint_path = Path(cfg.training.checkpoint_path).resolve()
-    if not checkpoint_path.is_file():
-        raise SystemExit(f"Checkpoint not found: {checkpoint_path}")
+    checkpoint_path = Path(cfg.training.checkpoint_path)
+    resolved_path = checkpoint_path.resolve()
+    if not resolved_path.is_file():
+        alt_path = Path(__file__).resolve().parent / checkpoint_path.name
+        if alt_path.is_file():
+            resolved_path = alt_path
+            print(
+                f"Checkpoint not found at configured path, using fallback: {resolved_path}",
+                flush=True,
+            )
+        else:
+            raise SystemExit(f"Checkpoint not found: {resolved_path}")
 
-    print(f"Loading checkpoint: {checkpoint_path}", flush=True)
-    ckpt: Dict[str, Any] = torch.load(checkpoint_path, map_location="cpu")
+    print(f"Loading checkpoint: {resolved_path}", flush=True)
+    ckpt: Dict[str, Any] = torch.load(resolved_path, map_location="cpu")
     model = build_model_from_checkpoint(ckpt)
     model.load_state_dict(ckpt["model_state_dict"])
     model.to(device)
@@ -176,7 +203,14 @@ def main(cfg: DictConfig) -> None:
     eval_transform = build_transforms(is_training=False, use_imagenet_norm=pretrained)
 
     test_root = Path(cfg.dataset.test_dir).resolve()
-    output_path = Path(cfg.dataset.submission_output).resolve()
+    base_output_path = Path(cfg.dataset.submission_output).resolve()
+    val_accuracy = None
+    if "val_accuracy" in ckpt and ckpt["val_accuracy"] is not None:
+        try:
+            val_accuracy = float(ckpt["val_accuracy"])
+        except (TypeError, ValueError):
+            val_accuracy = None
+    output_path = make_submission_path(base_output_path, val_accuracy)
     manifest_cfg = cfg.dataset.get("test_manifest")
 
     print(f"Indexing video folders under: {test_root}", flush=True)
