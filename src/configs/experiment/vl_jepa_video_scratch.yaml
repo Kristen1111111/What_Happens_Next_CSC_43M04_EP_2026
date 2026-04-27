@@ -1,0 +1,41 @@
+defaults:
+  - /model: vl_jepa_video_scratch_model
+
+# From-scratch training: no pretrained visual weights.
+model:
+  pretrained: false
+  x_encoder_name: vit_small_patch16_224
+  freeze_x_encoder: false
+  img_size: 224
+  predictor_dim: 512
+  target_dim: 512
+  predictor_depth: 4
+  num_heads: 8
+  num_query_tokens: 4
+  dropout: 0.15
+  logit_scale_init: 10.0
+
+training:
+  # From scratch usually needs a higher LR and more epochs than pretrained.
+  batch_size: 8
+  lr: 1.0e-04
+  epochs: 100
+  num_workers: 4
+  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/vl_jepa_video_scratch_best.pt
+  device: cuda
+
+  label_smoothing: 0.1
+  use_scheduler: true
+
+  # Strong augmentation helps because all visual weights are random at init.
+  use_augmentation: true
+  aug_temporal_jitter: 0.4
+  aug_frame_drop: 0.20
+  aug_erasing: 0.5
+  aug_mixup: 0.3
+  aug_mixup_alpha: 0.2
+
+dataset:
+  num_frames: 8
+  val_ratio: 0.2
+  seed: 42
