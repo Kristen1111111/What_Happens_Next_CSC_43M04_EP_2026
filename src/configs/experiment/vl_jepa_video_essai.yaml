@@ -1,0 +1,65 @@
+defaults:
+  - /model: vl_jepa_essai
+
+model:
+  pretrained: true
+  x_encoder_name: vit_base_patch16_224
+  freeze_x_encoder: false
+  predictor_dim: 1024
+  target_dim: 1024
+  predictor_depth: 6
+  num_heads: 16
+  num_query_tokens: 8
+  dropout: 0.30
+  logit_scale_init: 10.0
+
+training:
+  device: cuda
+  data_parallel: true          # utilise plusieurs GPU si disponibles
+  compile: false               # mets true si PyTorch 2.x et modèle compatible
+  amp: true                    # mixed precision = plus rapide + moins de VRAM
+  tf32: true
+  cudnn_benchmark: true
+
+  batch_size: 4                # batch réel par step; augmente si ça passe
+  eval_batch_size: 8
+  grad_accum_steps: 4          # batch effectif = batch_size * grad_accum_steps * nb_gpu
+  epochs: 100
+  num_workers: 8
+  persistent_workers: true
+  prefetch_factor: 4
+  drop_last: true
+
+  optimizer: adamw
+  lr: 1.0e-4
+  weight_decay: 0.05
+  beta1: 0.9
+  beta2: 0.999
+  eps: 1.0e-8
+
+  scheduler: cosine_warmup
+  warmup_epochs: 8
+  min_lr: 1.0e-6
+  max_grad_norm: 1.0
+
+  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/vl_jepa_video_strong_best.pt
+  label_smoothing: 0.10
+  class_weighted_loss: true
+  balanced_sampler: true
+
+  ema: true
+  ema_decay: 0.999
+  validate_ema: true
+  early_stopping_patience: 25
+
+  use_augmentation: true
+  aug_temporal_jitter: 0.45
+  aug_frame_drop: 0.20
+  aug_erasing: 0.50
+  aug_mixup: 0.35
+  aug_mixup_alpha: 0.40
+
+dataset:
+  num_frames: 16               # gros gain si tes vidéos ont assez de signal temporel
+  val_ratio: 0.2
+  seed: 42

@@ -81,6 +81,54 @@ def collect_video_samples(root_dir: Path) -> List[Tuple[Path, int]]:
     return samples
 
 
+def collect_video_samples_from_csv(root_dir: Path, csv_path: Path) -> List[Sample]:
+    """
+    CSV-based source of truth. CSV must contain:
+        video_name,class_idx
+    This avoids class-index mismatches caused by folder ordering or renamed folders.
+    """
+    root_dir = root_dir.resolve()
+    csv_path = csv_path.resolve()
+    if not root_dir.is_dir():
+        raise FileNotFoundError(f"Dataset root not found: {root_dir}")
+    if not csv_path.is_file():
+        raise FileNotFoundError(f"Label CSV not found: {csv_path}")
+
+    index = _index_video_folders(root_dir)
+    samples: List[Sample] = []
+    missing: List[str] = []
+
+    with csv_path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        if reader.fieldnames is None:
+            raise ValueError(f"Empty CSV: {csv_path}")
+        required = {"video_name", "class_idx"}
+        if not required.issubset(set(reader.fieldnames)):
+            raise ValueError(
+                f"{csv_path} must contain columns {sorted(required)}; got {reader.fieldnames}"
+            )
+
+        for row in reader:
+            video_name = row["video_name"].strip()
+            if not video_name:
+                continue
+            video_dir = index.get(video_name)
+            if video_dir is None:
+                missing.append(video_name)
+                continue
+            samples.append((video_dir, int(row["class_idx"])))
+
+    if missing:
+        preview = ", ".join(missing[:8])
+        extra = f" (+{len(missing) - 8} more)" if len(missing) > 8 else ""
+        raise FileNotFoundError(
+            f"{len(missing)} CSV video(s) not found under {root_dir}: {preview}{extra}"
+        )
+    if len(samples) == 0:
+        raise RuntimeError(f"No usable samples loaded from {csv_path}")
+    return samples
+
+
 def _pick_frame_indices(num_available: int, num_frames: int) -> List[int]:
     """
     Evenly spaced indices in [0, num_available - 1], inclusive.

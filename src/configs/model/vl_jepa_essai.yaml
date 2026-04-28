@@ -1,0 +1,16 @@
+name: vl_jepa_video
+num_classes: ${num_classes}
+pretrained: true
+
+# Stronger X-Encoder. Use vit_small_patch16_224 if VRAM is limited.
+x_encoder_name: vit_base_patch16_224
+freeze_x_encoder: false
+
+# Larger JEPA-style predictor / target embedding space.
+predictor_dim: 1024
+target_dim: 1024
+predictor_depth: 6
+num_heads: 16
+num_query_tokens: 8
+dropout: 0.30
+logit_scale_init: 10.0

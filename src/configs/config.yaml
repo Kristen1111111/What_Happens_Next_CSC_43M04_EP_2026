@@ -13,3 +13,8 @@ hydra:
     dir: outputs/${now:%Y-%m-%d_%H-%M-%S}
 
 num_classes: 33
+
+dataset:
+  train_labels_csv: csv/train_video_labels.csv
+  val_labels_csv: csv/val_video_labels.csv
+  tta_temporal_views: 5
