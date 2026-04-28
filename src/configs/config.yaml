@@ -15,6 +15,15 @@ hydra:
 num_classes: 33
 
 dataset:
+  train_dir: /Data/KristenLeGoat/train
+  val_dir: /Data/KristenLeGoat/val
+  test_dir: /Data/KristenLeGoat/test
+  submission_output: /Data/KristenLeGoat/submission.csv
+  num_frames: 16
+  val_ratio: 0.2
+  seed: 42
+  max_samples: null
   train_labels_csv: csv/train_video_labels.csv
   val_labels_csv: csv/val_video_labels.csv
   tta_temporal_views: 5
+  label_values: []
