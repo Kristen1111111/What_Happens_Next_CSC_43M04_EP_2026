@@ -1,0 +1,17 @@
+# Put this file in: src/configs/model/video_swin_transformer.yaml
+
+name: video_swin
+num_classes: ${num_classes}
+pretrained: true
+
+# Recommended starting point. Use swin3d_s or swin3d_b only if you have enough VRAM.
+arch: swin3d_t
+weights: KINETICS400_V1
+
+dropout: 0.35
+
+# For best performance, keep false. If you overfit badly or have little VRAM,
+# set freeze_backbone=true and unfreeze only the last 1-2 stages.
+freeze_backbone: false
+unfreeze_last_n_blocks: 0
+reset_head: true

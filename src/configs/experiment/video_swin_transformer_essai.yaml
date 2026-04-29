@@ -1,0 +1,73 @@
+
+# @package _global_
+
+model:
+  name: video_swin
+  num_classes: ${num_classes}
+  pretrained: true
+  arch: swin3d_t
+  weights: KINETICS400_V1
+  dropout: 0.35
+  freeze_backbone: false
+  unfreeze_last_n_blocks: 0
+  reset_head: true
+
+dataset:
+  # Video Swin likes longer temporal clips than your previous 8/16-frame setup.
+  # If you get CUDA OOM, reduce this to 16.
+  num_frames: 32
+  val_ratio: 0.2
+  seed: 42
+  train_labels_csv: csv/train_video_labels.csv
+  val_labels_csv: csv/val_video_labels.csv
+  tta_temporal_views: 5
+
+training:
+  device: cuda
+  data_parallel: true
+  compile: false
+  amp: true
+  tf32: true
+  cudnn_benchmark: true
+
+  # swin3d_t + 32 frames can be heavy. Increase only if VRAM allows.
+  batch_size: 2
+  eval_batch_size: 4
+  grad_accum_steps: 8
+
+  epochs: 80
+  num_workers: 8
+  persistent_workers: true
+  prefetch_factor: 4
+  drop_last: true
+
+  optimizer: adamw
+  lr: 0.00003
+  weight_decay: 0.05
+  beta1: 0.9
+  beta2: 0.999
+  eps: 1.0e-08
+
+  scheduler: cosine_warmup
+  warmup_epochs: 6
+  min_lr: 1.0e-06
+  max_grad_norm: 1.0
+
+  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/video_swin_t_best.pt
+
+  label_smoothing: 0.1
+  class_weighted_loss: true
+  balanced_sampler: true
+
+  ema: true
+  ema_decay: 0.999
+  validate_ema: true
+  early_stopping_patience: 20
+
+  use_augmentation: true
+  # Video Swin already models temporal structure; keep frame_drop lower than with your JEPA head.
+  aug_temporal_jitter: 0.35
+  aug_frame_drop: 0.10
+  aug_erasing: 0.35
+  aug_mixup: 0.20
+  aug_mixup_alpha: 0.30

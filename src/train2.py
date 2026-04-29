@@ -44,6 +44,7 @@ from models.cnn_lstm import CNNLSTM
 from models.cnn_transformer import CNNTransformer
 from models.video_transformer import build_video_transformer
 from models.vl_jepa_video import build_vl_jepa_video_classifier
+from models.video_swin_transformer import build_video_swin_transformer_classifier
 from utils import build_transforms, set_seed, split_train_val
 from dataset.video_augmentation import (
     VideoAugmentation,
@@ -111,6 +112,18 @@ def build_model(cfg: DictConfig) -> nn.Module:
             drop_path_rate=float(cfg.model.get("drop_path_rate", 0.10)),
             temporal_mask_prob=float(cfg.model.get("temporal_mask_prob", 0.10)),
             head_hidden_mult=float(cfg.model.get("head_hidden_mult", 1.0)),
+        )
+
+    if name == "video_swin":
+        return build_video_swin_transformer_classifier(
+            num_classes=num_classes,
+            pretrained=pretrained,
+            arch=str(cfg.model.get("arch", "swin3d_t")),
+            weights=str(cfg.model.get("weights", "KINETICS400_V1")),
+            dropout=float(cfg.model.get("dropout", 0.35)),
+            freeze_backbone=bool(cfg.model.get("freeze_backbone", False)),
+            unfreeze_last_n_blocks=int(cfg.model.get("unfreeze_last_n_blocks", 0)),
+            reset_head=bool(cfg.model.get("reset_head", True)),
         )
 
     raise ValueError(f"Unknown model.name: {name}")
