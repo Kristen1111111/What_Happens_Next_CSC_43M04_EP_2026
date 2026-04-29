@@ -87,6 +87,16 @@ def resolve_video_dirs(test_root: Path, video_names: List[str]) -> List[Path]:
     return out
 
 
+def get_latest_file_in_dir(directory: Path) -> Optional[Path]:
+    directory = directory.resolve()
+    if not directory.is_dir():
+        return None
+    candidates = [p for p in directory.iterdir() if p.is_file()]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.stat().st_mtime)
+
+
 def make_submission_path(base_output_path: Path, val_accuracy: Optional[float]) -> Path:
     """Build a new submission file path including accuracy and timestamp."""
     if base_output_path.is_dir():
@@ -179,17 +189,41 @@ def main(cfg: DictConfig) -> None:
     device = torch.device(device_str)
 
     checkpoint_path = Path(cfg.training.checkpoint_path)
-    resolved_path = checkpoint_path.resolve()
-    if not resolved_path.is_file():
-        alt_path = Path(__file__).resolve().parent / checkpoint_path.name
-        if alt_path.is_file():
-            resolved_path = alt_path
+    resolved_path: Optional[Path] = None
+
+    if checkpoint_path.is_file():
+        resolved_path = checkpoint_path.resolve()
+    elif checkpoint_path.is_dir():
+        resolved_path = get_latest_file_in_dir(checkpoint_path)
+        if resolved_path is None:
+            raise SystemExit(
+                f"No checkpoint files found in configured directory: {checkpoint_path}"
+            )
+        print(
+            f"Using latest checkpoint from configured directory: {resolved_path}",
+            flush=True,
+        )
+    else:
+        tmp_checkpoint_dir = Path("/tmp/kristen.boitier/checkpoints")
+        latest_tmp_checkpoint = get_latest_file_in_dir(tmp_checkpoint_dir)
+        if latest_tmp_checkpoint is not None:
+            resolved_path = latest_tmp_checkpoint
             print(
-                f"Checkpoint not found at configured path, using fallback: {resolved_path}",
+                f"Checkpoint path not found; using latest checkpoint from {tmp_checkpoint_dir}: {resolved_path}",
                 flush=True,
             )
         else:
-            raise SystemExit(f"Checkpoint not found: {resolved_path}")
+            alt_path = Path(__file__).resolve().parent / checkpoint_path.name
+            if alt_path.is_file():
+                resolved_path = alt_path
+                print(
+                    f"Checkpoint not found at configured path, using fallback: {resolved_path}",
+                    flush=True,
+                )
+            else:
+                raise SystemExit(
+                    f"Checkpoint not found: {checkpoint_path} and no checkpoint found in {tmp_checkpoint_dir}"
+                )
 
     print(f"Loading checkpoint: {resolved_path}", flush=True)
     ckpt: Dict[str, Any] = torch.load(resolved_path, map_location="cpu")

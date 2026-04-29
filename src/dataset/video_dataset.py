@@ -102,6 +102,7 @@ def collect_video_samples_from_csv(root_dir: Path, csv_path: Path) -> List[Sampl
     index = _index_video_folders(root_dir)
     samples: List[Sample] = []
     missing: List[str] = []
+    empty: List[str] = []
 
     with csv_path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -119,7 +120,19 @@ def collect_video_samples_from_csv(root_dir: Path, csv_path: Path) -> List[Sampl
             if video_dir is None:
                 missing.append(video_name)
                 continue
+            if len(_list_frame_paths(video_dir)) == 0:
+                empty.append(video_name)
+                continue
             samples.append((video_dir, int(row["class_idx"])))
+
+    if empty:
+        preview = ", ".join(empty[:12])
+        extra = f" (+{len(empty) - 12} more)" if len(empty) > 12 else ""
+        print(
+            f"Warning: ignored {len(empty)} CSV video(s) with no frames under {root_dir}: "
+            f"{preview}{extra}",
+            flush=True,
+        )
 
     if missing:
         preview = ", ".join(missing[:8])
@@ -139,12 +152,23 @@ def collect_unlabeled_video_samples(root_dir: Path, video_names: Optional[List[s
         video_names = sorted(index.keys())
     samples: List[Sample] = []
     missing: List[str] = []
+    empty: List[str] = []
     for name in video_names:
         p = index.get(name)
         if p is None:
             missing.append(name)
+        elif len(_list_frame_paths(p)) == 0:
+            empty.append(name)
         else:
             samples.append((p, 0))
+    if empty:
+        preview = ", ".join(empty[:12])
+        extra = f" (+{len(empty) - 12} more)" if len(empty) > 12 else ""
+        print(
+            f"Warning: ignored {len(empty)} test video(s) with no frames under {root_dir}: "
+            f"{preview}{extra}",
+            flush=True,
+        )
     if missing:
         preview = ", ".join(missing[:8])
         extra = f" (+{len(missing) - 8} more)" if len(missing) > 8 else ""
@@ -235,6 +259,12 @@ class VideoFrameDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         video_dir, label = self.samples[index]
         frame_paths = _list_frame_paths(video_dir)
+        if len(frame_paths) == 0:
+            raise RuntimeError(
+                f"Video folder has no readable frames: {video_dir}. "
+                "Expected files ending in .jpg, .jpeg, .png or .webp. "
+                "This should normally have been filtered at dataset construction."
+            )
         indices = _pick_frame_indices(
             len(frame_paths),
             self.num_frames,
