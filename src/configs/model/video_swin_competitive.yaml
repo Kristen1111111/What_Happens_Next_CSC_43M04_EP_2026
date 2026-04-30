@@ -1,0 +1,11 @@
+# Put this file in: src/configs/model/video_swin_competitive.yaml
+name: video_swin
+num_classes: ${num_classes}
+pretrained: true
+arch: swin3d_s
+weights: KINETICS400_V1
+dropout: 0.45
+head_hidden_mult: 1.0
+freeze_backbone: false
+unfreeze_last_n_blocks: 0
+reset_head: true
