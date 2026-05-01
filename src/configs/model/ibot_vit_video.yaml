@@ -1,0 +1,17 @@
+# Put this file in: src/configs/model/ibot_vit_video.yaml
+name: ibot_vit_video
+num_classes: ${num_classes}
+pretrained: true
+vit_name: vit_base_patch16_224
+ibot_checkpoint: checkpoints/ibot_pretrain_best.pt
+freeze_encoder: false
+unfreeze_last_n_blocks: 0
+embed_dim: 768
+temporal_depth: 4
+temporal_heads: 12
+temporal_mlp_ratio: 4.0
+num_query_tokens: 4
+dropout: 0.30
+drop_path_rate: 0.10
+head_hidden_mult: 1.5
+temporal_mask_prob: 0.05

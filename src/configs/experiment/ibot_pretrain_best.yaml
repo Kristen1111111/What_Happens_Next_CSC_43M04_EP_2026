@@ -1,0 +1,47 @@
+# @package _global_
+
+dataset:
+  train_dir: /Data/KristenLeGoat/train
+  val_dir: /Data/KristenLeGoat/val
+  test_dir: /Data/KristenLeGoat/test
+  seed: 42
+
+training:
+  device: cuda
+  num_workers: 8
+  amp: true
+
+ibot:
+  # Use train + val + test frames: no labels are used, so this is standard transductive SSL for Kaggle.
+  ssl_roots:
+    - /Data/KristenLeGoat/train
+    - /Data/KristenLeGoat/val
+    - /Data/KristenLeGoat/test
+
+  vit_name: vit_base_patch16_224
+  pretrained: true
+  image_size: 224
+  local_size: 96
+  local_crops: 0
+
+  epochs: 20
+  batch_size: 32
+  lr: 0.00015
+  min_lr: 0.000001
+  warmup_epochs: 2
+  weight_decay: 0.04
+  weight_decay_end: 0.40
+  clip_grad: 3.0
+
+  out_dim: 8192
+  patch_out_dim: 8192
+  mask_ratio: 0.35
+  patch_loss_weight: 1.0
+  student_temp: 0.10
+  teacher_temp: 0.04
+  center_momentum: 0.90
+  ema_momentum: 0.996
+  ema_momentum_end: 1.0
+
+  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/ibot_pretrain_best.pt
+  max_frames: null

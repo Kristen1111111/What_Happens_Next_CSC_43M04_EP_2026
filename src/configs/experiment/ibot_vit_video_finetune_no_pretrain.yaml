@@ -1,0 +1,70 @@
+# @package _global_
+
+# Fallback if iBOT pretraining is too slow: fine-tune ImageNet ViT directly.
+model:
+  name: ibot_vit_video
+  num_classes: ${num_classes}
+  pretrained: true
+  vit_name: vit_base_patch16_224
+  ibot_checkpoint: null
+  freeze_encoder: false
+  embed_dim: 768
+  temporal_depth: 4
+  temporal_heads: 12
+  temporal_mlp_ratio: 4.0
+  num_query_tokens: 4
+  dropout: 0.35
+  drop_path_rate: 0.12
+  head_hidden_mult: 1.5
+  temporal_mask_prob: 0.05
+
+dataset:
+  train_dir: /Data/KristenLeGoat/train
+  val_dir: /Data/KristenLeGoat/val
+  test_dir: /Data/KristenLeGoat/test
+  submission_output: /Data/KristenLeGoat/submission.csv
+  num_frames: 16
+  val_ratio: 0.2
+  seed: 123
+  train_labels_csv: csv/train_video_labels.csv
+  val_labels_csv: csv/val_video_labels.csv
+  tta_temporal_views: 7
+
+training:
+  device: cuda
+  amp: true
+  tf32: true
+  cudnn_benchmark: true
+  batch_size: 2
+  eval_batch_size: 4
+  grad_accum_steps: 8
+  epochs: 50
+  num_workers: 8
+  persistent_workers: true
+  prefetch_factor: 4
+  drop_last: true
+  optimizer: adamw
+  lr: 0.00002
+  differential_lr: true
+  backbone_lr_mult: 0.20
+  head_lr_mult: 4.0
+  weight_decay: 0.05
+  scheduler: cosine_warmup
+  warmup_epochs: 4
+  min_lr: 0.000001
+  max_grad_norm: 1.0
+  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/ibot_vit_video_imagenet_best.pt
+  label_smoothing: 0.05
+  class_weighted_loss: true
+  balanced_sampler: true
+  ema: true
+  ema_decay: 0.999
+  validate_ema: true
+  early_stopping_patience: 12
+  save_training_state: false
+  use_augmentation: true
+  aug_temporal_jitter: 0.30
+  aug_frame_drop: 0.05
+  aug_erasing: 0.25
+  aug_mixup: 0.10
+  aug_mixup_alpha: 0.20
