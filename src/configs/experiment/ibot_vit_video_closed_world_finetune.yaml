@@ -1,28 +1,29 @@
 # @package _global_
+# Fine-tune the closed-world iBOT checkpoint.
+# No ImageNet/timm pretrained weights.
 
 model:
   name: ibot_vit_video
+  pretrained: false
   num_classes: ${num_classes}
-  pretrained: true
-  vit_name: vit_base_patch16_224
-  ibot_checkpoint: ${hydra:runtime.cwd}/checkpoints/ibot_pretrain_best.pt
+
+  vit_name: vit_small_patch16_224
+  ibot_checkpoint: ${hydra:runtime.cwd}/checkpoints/ibot_closed_world_pretrain.pt
+
   freeze_encoder: false
   unfreeze_last_n_blocks: 0
-  embed_dim: 768
+  embed_dim: 384
+
   temporal_depth: 4
-  temporal_heads: 12
+  temporal_heads: 6
   temporal_mlp_ratio: 4.0
   num_query_tokens: 4
-  dropout: 0.30
-  drop_path_rate: 0.10
+  dropout: 0.35
+  drop_path_rate: 0.15
   head_hidden_mult: 1.5
-  temporal_mask_prob: 0.05
+  temporal_mask_prob: 0.08
 
 dataset:
-  train_dir: /Data/KristenLeGoat/train
-  val_dir: /Data/KristenLeGoat/val
-  test_dir: /Data/KristenLeGoat/test
-  submission_output: /Data/KristenLeGoat/submission.csv
   num_frames: 16
   val_ratio: 0.2
   seed: 42
@@ -41,39 +42,42 @@ training:
   batch_size: 2
   eval_batch_size: 4
   grad_accum_steps: 8
-  epochs: 60
+
+  epochs: 100
   num_workers: 8
   persistent_workers: true
   prefetch_factor: 4
   drop_last: true
 
   optimizer: adamw
-  lr: 0.00003
+  lr: 0.00005
   differential_lr: true
-  backbone_lr_mult: 0.20
+  backbone_lr_mult: 0.35
   head_lr_mult: 4.0
-  weight_decay: 0.05
+  weight_decay: 0.08
   beta1: 0.9
   beta2: 0.999
   eps: 1.0e-08
 
   scheduler: cosine_warmup
-  warmup_epochs: 4
-  min_lr: 0.000001
+  warmup_epochs: 8
+  min_lr: 1.0e-06
   max_grad_norm: 1.0
-  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/ibot_vit_video_best.pt
 
-  label_smoothing: 0.05
+  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/ibot_closed_world_video_best.pt
+  save_training_state: false
+  label_smoothing: 0.10
   class_weighted_loss: true
   balanced_sampler: true
+
   ema: true
-  ema_decay: 0.999
+  ema_decay: 0.9995
   validate_ema: true
-  early_stopping_patience: 15
-  save_training_state: false
+  early_stopping_patience: 25
+
   use_augmentation: true
-  aug_temporal_jitter: 0.30
-  aug_frame_drop: 0.05
-  aug_erasing: 0.25
-  aug_mixup: 0.10
-  aug_mixup_alpha: 0.20
+  aug_temporal_jitter: 0.35
+  aug_frame_drop: 0.08
+  aug_erasing: 0.30
+  aug_mixup: 0.15
+  aug_mixup_alpha: 0.25

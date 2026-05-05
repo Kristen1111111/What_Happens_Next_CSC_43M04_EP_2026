@@ -28,7 +28,7 @@ from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
 
 from dataset.video_dataset import VideoFrameDataset
-from train2 import build_model
+from train2_ibot_ready import build_model
 from utils import build_transforms, set_seed
 
 

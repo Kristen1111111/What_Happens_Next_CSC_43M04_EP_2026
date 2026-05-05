@@ -1,0 +1,47 @@
+# @package _global_
+# Closed-world iBOT pretraining.
+# IMPORTANT: no external pretrained weights. Only challenge frames are used.
+# If the rules forbid using test frames, remove ${dataset.test_dir} from ssl_roots.
+
+ibot:
+  ssl_roots:
+    - ${dataset.train_dir}
+    - ${dataset.val_dir}
+    - ${dataset.test_dir}
+
+  vit_name: vit_small_patch16_224
+  pretrained: false
+
+  image_size: 224
+  local_size: 96
+  local_crops: 0
+
+  epochs: 60
+  batch_size: 64
+  lr: 0.00030
+  min_lr: 1.0e-06
+  warmup_epochs: 10
+  weight_decay: 0.04
+  weight_decay_end: 0.4
+  clip_grad: 3.0
+
+  out_dim: 8192
+  patch_out_dim: 8192
+  mask_ratio: 0.45
+  patch_loss_weight: 1.0
+  student_temp: 0.1
+  teacher_temp: 0.04
+  center_momentum: 0.9
+  ema_momentum: 0.996
+  ema_momentum_end: 1.0
+
+  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/ibot_closed_world_pretrain.pt
+  max_frames: null
+
+training:
+  save_training_state: false
+  device: cuda
+  num_workers: 8
+  amp: true
+  tf32: true
+  cudnn_benchmark: true

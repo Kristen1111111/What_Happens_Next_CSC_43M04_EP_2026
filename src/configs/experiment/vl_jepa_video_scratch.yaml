@@ -16,6 +16,7 @@ model:
   logit_scale_init: 10.0
 
 training:
+  save_training_state: false
   # From scratch usually needs a higher LR and more epochs than pretrained.
   batch_size: 8
   lr: 1.0e-04

@@ -20,6 +20,7 @@ model:
   head_hidden_mult: 1.5
 
 training:
+  save_training_state: false
   device: cuda
   data_parallel: true
   compile: false

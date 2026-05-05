@@ -1,0 +1,12 @@
+# @package _global_
+# Same as video_swin_scratch_essai, different seed for ensembling.
+
+defaults:
+  - video_swin_scratch_essai
+
+dataset:
+  seed: 123
+
+training:
+  save_training_state: false
+  checkpoint_path: ${hydra:runtime.cwd}/checkpoints/video_swin_scratch_t_seed123_best.pt

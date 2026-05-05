@@ -1,0 +1,11 @@
+# @package _global_
+# Ensemble submission config for closed-world models.
+
+defaults:
+  - ibot_vit_video_closed_world_finetune
+
+inference:
+  checkpoints: "checkpoints/video_swin_scratch_t_best.pt,checkpoints/video_swin_scratch_t_seed123_best.pt,checkpoints/ibot_closed_world_video_best.pt"
+
+dataset:
+  tta_temporal_views: 7

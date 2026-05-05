@@ -10,6 +10,7 @@ model:
   head_hidden: 192
 
 training:
+  save_training_state: false
   batch_size: 1
   lr: 0.0001
   epochs: 25

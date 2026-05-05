@@ -9,6 +9,7 @@ model:
   dropout: 0.2
 
 training:
+  save_training_state: false
   batch_size: 4
   lr: 0.0001
   epochs: 12
