@@ -1,0 +1,5 @@
+name: video_r2plus1d_closed_world
+pretrained: false
+weights: null
+num_classes: ${num_classes}
+pretrained_checkpoint: /Data/kristen.boitier/checkpoints/video_r2plus1d_closed_world_best.pt

@@ -1,0 +1,73 @@
+defaults:
+  - /model: video_mae_closed_world
+  - _self_
+
+dataset:
+  train_dir: /Data/KristenLeGoat/train
+  val_dir: /Data/KristenLeGoat/val
+  test_dir: /Data/KristenLeGoat/test
+  submission_output: /Data/kristen.boitier/submissions/submission_video_mae_closed_world.csv
+
+  num_frames: 16
+  val_ratio: 0.2
+  seed: 42
+  max_samples: null
+
+  train_labels_csv: csv/train_video_labels.csv
+  val_labels_csv: csv/val_video_labels.csv
+  tta_temporal_views: 5
+  label_values: []
+
+training:
+  batch_size: 2
+  lr: 8.0e-5
+  epochs: 120
+  num_workers: 2
+
+  checkpoint_path: /Data/kristen.boitier/checkpoints/video_mae_closed_world_best.pt
+
+  device: cuda
+  data_parallel: false
+  compile: false
+  amp: true
+  tf32: true
+  cudnn_benchmark: true
+
+  eval_batch_size: 4
+  grad_accum_steps: 8
+  persistent_workers: false
+  prefetch_factor: 2
+  drop_last: true
+
+  optimizer: adamw
+  differential_lr: false
+  backbone_lr_mult: 1.0
+  head_lr_mult: 1.0
+  weight_decay: 0.06
+  beta1: 0.9
+  beta2: 0.999
+  eps: 1.0e-8
+
+  scheduler: cosine_warmup
+  warmup_epochs: 10
+  min_lr: 1.0e-6
+  max_grad_norm: 1.0
+
+  save_training_state: false
+  label_smoothing: 0.08
+  class_weighted_loss: true
+  balanced_sampler: true
+
+  ema: true
+  ema_decay: 0.9995
+  validate_ema: true
+  early_stopping_patience: 25
+
+  use_augmentation: true
+  aug_temporal_jitter: 0.35
+  aug_frame_drop: 0.08
+  aug_erasing: 0.25
+  aug_mixup: 0.10
+  aug_mixup_alpha: 0.20
+
+num_classes: 33

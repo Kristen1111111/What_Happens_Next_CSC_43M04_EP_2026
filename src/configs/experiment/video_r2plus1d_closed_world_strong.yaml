@@ -1,0 +1,73 @@
+defaults:
+  - /model: video_r2plus1d_closed_world
+  - _self_
+
+dataset:
+  train_dir: /Data/KristenLeGoat/train
+  val_dir: /Data/KristenLeGoat/val
+  test_dir: /Data/KristenLeGoat/test
+  submission_output: /Data/kristen.boitier/submissions/submission_r2plus1d_closed_world.csv
+
+  num_frames: 16
+  val_ratio: 0.2
+  seed: 42
+  max_samples: null
+
+  train_labels_csv: csv/train_video_labels.csv
+  val_labels_csv: csv/val_video_labels.csv
+  tta_temporal_views: 5
+  label_values: []
+
+training:
+  batch_size: 4
+  lr: 8.0e-5
+  epochs: 100
+  num_workers: 2
+
+  checkpoint_path: /Data/kristen.boitier/checkpoints/video_r2plus1d_closed_world_best_v2.pt
+
+  device: cuda
+  data_parallel: false
+  compile: false
+  amp: true
+  tf32: true
+  cudnn_benchmark: true
+
+  eval_batch_size: 8
+  grad_accum_steps: 4
+  persistent_workers: false
+  prefetch_factor: 2
+  drop_last: true
+
+  optimizer: adamw
+  differential_lr: false
+  backbone_lr_mult: 1.0
+  head_lr_mult: 1.0
+  weight_decay: 0.04
+  beta1: 0.9
+  beta2: 0.999
+  eps: 1.0e-8
+
+  scheduler: cosine_warmup
+  warmup_epochs: 8
+  min_lr: 1.0e-6
+  max_grad_norm: 1.0
+
+  save_training_state: false
+  label_smoothing: 0.05
+  class_weighted_loss: true
+  balanced_sampler: true
+
+  ema: true
+  ema_decay: 0.999
+  validate_ema: true
+  early_stopping_patience: 20
+
+  use_augmentation: true
+  aug_temporal_jitter: 0.30
+  aug_frame_drop: 0.06
+  aug_erasing: 0.20
+  aug_mixup: 0.05
+  aug_mixup_alpha: 0.15
+
+num_classes: 33

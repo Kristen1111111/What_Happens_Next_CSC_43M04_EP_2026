@@ -1,0 +1,16 @@
+name: video_mae_closed_world
+pretrained: false
+num_classes: ${num_classes}
+
+# Modèle from scratch, closed-world strict.
+embed_dim: 384
+depth: 8
+num_heads: 6
+mlp_ratio: 4.0
+dropout: 0.20
+
+tubelet_size: 2
+patch_size: 16
+image_size: 224
+
+pretrained_checkpoint: null
